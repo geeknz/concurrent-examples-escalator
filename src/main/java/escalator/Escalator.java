@@ -4,57 +4,66 @@ import java.util.Random;
 
 public class Escalator implements Runnable {
 
-
 	private boolean direction = true;
 
-	private int numberOfSpacesUp;
-	private int numberOfSpacesDown;
+	private boolean block = false;
+
+	private int numberOfSpaces;
 
 	public Escalator( final int numberOfSpaces ) {
-		this.numberOfSpacesUp = numberOfSpaces;
-		this.numberOfSpacesDown = numberOfSpaces;
+		this.numberOfSpaces = numberOfSpaces;
 	}
 
 	public synchronized void rideUp() throws InterruptedException {
 
-		while( !direction || numberOfSpacesUp == 0 ){
+		while( block || !direction || numberOfSpaces == 0 ){
 
 			wait();
 		}
 
 		System.out.println( Thread.currentThread().getName() + " coming from the first floor, is entering the escalator" );
-		numberOfSpacesUp--;
+		numberOfSpaces--;
 
 		wait( 1000 );
 
 		System.out.println( Thread.currentThread().getName() + " coming from the first floor, is exiting the escalator" );
-		numberOfSpacesUp++;
+		numberOfSpaces++;
 
 		notifyAll();
 	}
 
 	public synchronized void rideDown() throws InterruptedException {
 
-		while( direction || numberOfSpacesDown == 0 ){
+		while( block || direction || numberOfSpaces == 0 ){
 
 			wait();
 		}
 
 		System.out.println( Thread.currentThread().getName() + " coming from the second floor, is entering the escalator" );
-		numberOfSpacesDown--;
+		numberOfSpaces--;
 
 		wait( 1000 );
 
 		System.out.println( Thread.currentThread().getName() + " coming from the second floor, is exiting the escalator" );
-		numberOfSpacesDown++;
+		numberOfSpaces++;
 
 		notifyAll();
 	}
 
-	private synchronized Escalator setDirection( boolean direction ) {
+	private synchronized Escalator setDirection( boolean direction ) throws InterruptedException {
+
+		block = true;
+
+		while( numberOfSpaces != 10 ) {
+
+			wait();
+		}
 
 		this.direction = direction;
-		notifyAll();
+
+		block = false;
+
+		notify();
 		return this;
 	}
 
@@ -85,7 +94,7 @@ public class Escalator implements Runnable {
 
 		new Thread( escalator ).start();
 
-		for ( int i = 0; i < 100; i++ ) {
+		for ( int i = 0; i < 10000; i++ ) {
 
 			new Thread( new Person( random.nextBoolean(), escalator ) ).start();
 		}
